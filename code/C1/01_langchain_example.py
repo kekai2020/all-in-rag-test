@@ -69,6 +69,13 @@ question = "文中举了哪些例子？"
 
 # 在向量存储中查询相关文档
 retrieved_docs = vectorstore.similarity_search(question, k=3)
+print(type(retrieved_docs))
+for i, doc in enumerate(retrieved_docs):
+    print(f"===== 文档 {i+1} =====")
+    print("类型:", type(doc))
+    print("内容:", doc.page_content)
+    print("元数据:", doc.metadata)
+    print()
 docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
 
 answer = llm.invoke(prompt.format(question=question, context=docs_content))
