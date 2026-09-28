@@ -29,7 +29,7 @@ ENV/
 .vscode/
 *.swp
 *.swo
-
+.codeartsdoer/
 # Environment variables
 .env
 .env.local
