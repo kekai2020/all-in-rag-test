@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 # hugging face镜像设置，如果国内环境无法使用启用该设置
 # os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 from dotenv import load_dotenv
@@ -48,35 +49,57 @@ prompt = ChatPromptTemplate.from_template("""请根据下面提供的上下文�
 # 配置大语言模型
 
 # 使用 AIHubmix
-llm = ChatOpenAI(
-    model="glm-4.7-flash-free",
-    temperature=0.7,
-    max_tokens=4096,
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://aihubmix.com/v1"
-)
-
 # llm = ChatOpenAI(
-#     model="deepseek-chat",
+#     model="glm-4.7-flash-free",
 #     temperature=0.7,
 #     max_tokens=4096,
 #     api_key=os.getenv("DEEPSEEK_API_KEY"),
-#     base_url="https://api.deepseek.com"
+#     base_url="https://aihubmix.com/v1"
 # )
+
+llm = ChatOpenAI(
+    model="deepseek-flash",
+    temperature=0.7,
+    max_tokens=4096,
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com"
+)
 
 # 用户查询
 question = "文中举了哪些例子？"
 
 # 在向量存储中查询相关文档
 retrieved_docs = vectorstore.similarity_search(question, k=3)
-print(type(retrieved_docs))
-for i, doc in enumerate(retrieved_docs):
-    print(f"===== 文档 {i+1} =====")
-    print("类型:", type(doc))
-    print("内容:", doc.page_content)
-    print("元数据:", doc.metadata)
-    print()
+# print(type(retrieved_docs))
+# for i, doc in enumerate(retrieved_docs):
+#     print(f"===== 文档 {i+1} =====")
+#     print("类型:", type(doc))
+#     print("内容:", doc.page_content)
+#     print("元数据:", doc.metadata)
+#     print()
 docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
 
 answer = llm.invoke(prompt.format(question=question, context=docs_content))
 print(answer)
+
+# 保存运行结果到文件（可选）
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"output_01_{timestamp}")
+os.makedirs(output_dir, exist_ok=True)
+
+retrieved_docs_text = "\n\n".join(
+    f"===== 文档 {i + 1} =====\n内容: {doc.page_content}\n元数据: {doc.metadata}"
+    for i, doc in enumerate(retrieved_docs)
+)
+
+with open(os.path.join(output_dir, f"retrieved_docs.txt"), "w", encoding="utf-8") as f:
+    f.write(retrieved_docs_text)
+
+with open(os.path.join(output_dir, f"docs_content.txt"), "w", encoding="utf-8") as f:
+    f.write(docs_content)
+
+answer_text = answer.content if hasattr(answer, "content") else str(answer)
+with open(os.path.join(output_dir, f"answer.txt"), "w", encoding="utf-8") as f:
+    f.write(f"问题: {question}\n\n回答: {answer_text}")
+
+print(f"\n结果已保存至: {output_dir}")
